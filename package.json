@@ -1,0 +1,30 @@
+{
+  "name": "react-m-cli",
+  "version": "1.0.0",
+  "description": "react移动端脚手架搭建工具",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bin/index.js"
+  },
+  "bin": {
+    "react-m-cli": "./bin/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dongkaifei/react-m-cli.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dongkaifei/react-m-cli/issues"
+  },
+  "homepage": "https://github.com/dongkaifei/react-m-cli#readme",
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "commander": "^6.0.0",
+    "execa": "^4.0.3",
+    "fs-extra": "^9.0.1",
+    "inquirer": "^7.3.2"
+  }
+}
