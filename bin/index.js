@@ -18,7 +18,7 @@ program
     .command('create <app-name>')
     .description('create a react project for mobile')
     .action((appName, options) => {
-        logger(chalk.green('your app name is:'), chalk.bgYellowBright(appName));
+        logger(chalk.green('🍎your app name is:'), chalk.bgYellowBright(appName));
         // 开始创建
         create(appName, options);
     })

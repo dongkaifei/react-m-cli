@@ -1,78 +1,31 @@
 const fs = require('fs-extra');
 const chalk = require('chalk');
 const path = require('path');
-const inquirer = require('inquirer');
-const execa = require('execa');
 const logger = console.log;
-
-// 询问是否覆盖当前文件夹
-async function isOverwrite() {
-    const { action } = await inquirer.prompt([
-        {
-            name: 'action',
-            type: 'list',
-            message: `Target directory already exists. Pick an action:`,
-            choices: [
-                { name: 'Overwrite', value: 'overwrite' },
-                { name: 'Cancel', value: false }
-            ]
-        }
-    ])
-    return action;
-}
-
-
-// 改变项目名称
-async function modifyProName(targetDir, projectName) {
-    logger('project name change start...');
-    return new Promise((resolve, reject) => {
-        const filePath = `${targetDir}/package.json`;
-        // read
-        fs.readJson(filePath)
-            .then(packageObj => {
-                packageObj.name = projectName;
-                // write
-                fs.writeJson(filePath, { ...packageObj }, { spaces: 2, EOL: '\r\n' })
-                    .then(() => {
-                        logger('project name is changed!');
-                        resolve();
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        reject(err);
-                    })
-            }).catch(err => {
-                console.error(err);
-                reject(err);
-            });
-    })
-}
-
-// 执行终端命令
-async function runCmd(command, args) {
-    if (!args) {
-        [command, ...args] = command.split(/\s+/)
-    }
-    return execa(command, args, { cwd: process.cwd() })
-}
-
-// clone git address
-async function cloneProject(appName) {
-    logger(chalk.bgCyanBright(`git clone...\nplease wait...`));
-    const gitAdress = 'https://github.com/dongkaifei/react-pro.git';
-    return runCmd('git', ['clone', gitAdress, appName]);
-}
+const {
+    // runCmd,
+    toInquirer,
+    modifyProName,
+    cloneProject,
+    generateReadme
+} = require('./utils');
 
 async function create(appName, options) {
     // 打印目标路径
     const cwd = options.cwd || process.cwd();
     const targetDir = path.resolve(cwd, appName || '.');
-    logger(chalk.yellowBright('your dir is: '), chalk.bgMagentaBright(targetDir));
+    logger(chalk.yellowBright('🌰 your dir is: '), chalk.bgMagentaBright(targetDir));
 
     // 如果存在同名文件夹
     if (fs.existsSync(targetDir)) {
         //目标文件目录已存在，询问是否覆盖
-        const action = await isOverwrite();
+        const action = await toInquirer({
+            message: `Target directory already exists. Pick an action:`,
+            choices: [
+                { name: 'Overwrite', value: 'overwrite' },
+                { name: 'Cancel', value: false }
+            ]
+        });
         if (!action) {
             logger('你选择了取消，请重新命名！');
             return;
@@ -81,19 +34,39 @@ async function create(appName, options) {
     }
 
     // clone...
-    const result = await cloneProject(appName);
-    if (result.exitCode !== 0) return;
-    logger(chalk.bgGreen.white('cloned success!'));
+    const cloneResult = await cloneProject(appName);
+    if (!cloneResult) return;
 
-    // 删除.git文件
+    // 删除.git文件及README.md
     if (fs.existsSync(`${targetDir}/.git`)) {
-        fs.remove(`${targetDir}/.git`);
+        fs.removeSync(`${targetDir}/.git`);
     }
+    if (fs.existsSync(`${targetDir}/README.md`)) {
+        fs.removeSync(`${targetDir}/README.md`);
+    }
+    // 创建新的README.md
+    await generateReadme(appName, 'npm', targetDir);
 
     // 修改package项目名称
     await modifyProName(targetDir, appName);
 
     logger(chalk.bgGreen.white('finish create!'));
+
+    // 询问是否立即开始安装依赖及开始运行
+    // const isInstall = await toInquirer({
+    //     message: `是否立即开始项目:`,
+    //     choices: [
+    //         { name: 'Go', value: 'yes' },
+    //         { name: 'Cancel', value: 'cancel' }
+    //     ]
+    // });
+    // if (isInstall === 'cancel') {
+    //     logger('项目创建已完成！');
+    //     return;
+    // }
+
+    // cd当前项目目录并执行install
+    // console.log(await runCmd('cd', [targetDir]));
 }
 
 module.exports = (...arg) => {
